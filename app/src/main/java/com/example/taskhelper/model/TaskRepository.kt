@@ -3,6 +3,7 @@ package com.example.taskhelper.model
 import com.example.taskhelper.model.local.TaskDao
 import com.example.taskhelper.model.local.TaskEntity
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 private fun TaskEntity.toDomain() = Task(
@@ -34,7 +35,18 @@ class TaskRepository(private val dao: TaskDao) {
         return dao.getAllTasks().map { list -> list.map { it.toDomain() } }
     }
 
-    fun getAllCategory(): Flow<List<String>> = dao.getAllCategory()
+    fun getAllCategory(): Flow<List<String>> {
+        return dao.getAllCategory()
+    }
+
+    fun getTasksByCategory(category: String): Flow<List<Task>> {
+        return dao.getTasksByCategory(category).map { list -> list.map { it.toDomain() } }
+    }
+
+    fun searchTasks(keyword: String): Flow<List<Task>> {
+        if (keyword.isBlank()) return flowOf(emptyList())
+        else return dao.searchTasks(keyword).map { list -> list.map { it.toDomain() } }
+    }
 
 //    fun getAllByDeadline(): Flow<List<Task>> {
 //        return dao.getAllByDeadline().map { list -> list.map { it.toDomain() } };

@@ -1,15 +1,17 @@
 package com.example.taskhelper.ui.task
 
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
@@ -45,162 +47,66 @@ import com.example.taskhelper.model.Tag
 import com.example.taskhelper.model.Task
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun EditTaskDialog(initTask: Task, onDismiss: () -> Unit, onConfirm: (Task) -> Unit) {
-    var title by remember(initTask.id) { mutableStateOf(initTask.title) }
-    var content by remember(initTask.id) { mutableStateOf(initTask.content) }
-    var deadline by remember(initTask.id) { mutableStateOf(initTask.deadline) }
-    var priority by remember(initTask.id) { mutableStateOf(initTask.priority) }
-    var category by remember(initTask.id) { mutableStateOf(initTask.category) }
-    var tags by remember(initTask.id) { mutableStateOf(initTask.tag.toSet()) }
-    var showDatePicker by remember { mutableStateOf(false) }
-    var categoryExpanded by remember { mutableStateOf(false) }
-    val isNew = initTask.id == 0L
-    val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (isNew) "新建任务" else "编辑任务") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("标题") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = content,
-                    onValueChange = { content = it },
-                    label = { Text("备注") },
-                    minLines = 2,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Priority.entries.forEach { value ->
-                        FilterChip(
-                            selected = priority == value,
-                            onClick = { priority = value },
-                            label = { Text(value.label) }
-                        )
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.size(4.dp))
-                        Text("设置截止日期")
-                    }
-                    Text(dateFormatter.format(Date(deadline)))
-                }
-                ExposedDropdownMenuBox(
-                    expanded = categoryExpanded,
-                    onExpandedChange = { categoryExpanded = it }
-                ) {
-                    OutlinedTextField(
-                        value = category,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("分类") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(categoryExpanded) },
-                        modifier = Modifier.fillMaxWidth().menuAnchor()
-                    )
-                    ExposedDropdownMenu(
-                        expanded = categoryExpanded,
-                        onDismissRequest = { categoryExpanded = false }
-                    ) {
-                        Category.entries.forEach { item ->
-                            DropdownMenuItem(
-                                text = { Text(item.label) },
-                                onClick = {
-                                    category = item.label
-                                    categoryExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-                TagSelector(
-                    tags = Tag.entries.map { it.label },
-                    selected = tags,
-                    onSave = { tags = it }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                if (title.isNotBlank()) {
-                    onConfirm(
-                        initTask.copy(
-                            title = title.trim(),
-                            content = content.trim(),
-                            deadline = deadline,
-                            priority = priority,
-                            category = category,
-                            tag = tags.toList()
-                        )
-                    )
-                }
-            }) { Text(if (isNew) "保存" else "确定") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } }
-    )
-    if (showDatePicker) {
-        val state = rememberDatePickerState(initialSelectedDateMillis = deadline)
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    state.selectedDateMillis?.let { deadline = it }
-                    showDatePicker = false
-                }) { Text("确定") }
-            },
-            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("取消") } }
-        ) { DatePicker(state = state) }
+fun TagSelector(
+    tags: List<String>,
+    _selected: Set<String> = emptySet(),
+    columns: Int = 3,
+    onSave: (Set<String>) -> Unit
+) {
+    var expended by remember { mutableStateOf(false) }
+    var selected by remember { mutableStateOf(_selected) }
+    OutlinedButton(
+        onClick = { expended = !expended },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Text("选择标签")
     }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun TagSelector(tags: List<String>, selected: Set<String>, onSave: (Set<String>) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    var pendingSelection by remember(selected) { mutableStateOf(selected) }
-    OutlinedButton(onClick = { expanded = !expanded }, modifier = Modifier.fillMaxWidth()) {
-        Text(if (selected.isEmpty()) "选择标签" else "已选择 ${selected.size} 个标签")
-    }
-    if (expanded) {
+    if (expended) {
         Surface(
-            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            // 通过改变背景色调来表达「这个面比底层高一点」的视觉层级
             tonalElevation = 1.dp,
             shape = RoundedCornerShape(8.dp)
         ) {
-            Column(Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth().heightIn(max = 180.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(columns),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    tags.forEach { tag ->
+                    items(tags) { tag ->
                         TagItem(
-                            tag = tag,
-                            selected = tag in pendingSelection,
+                            tag,
+                            selected = tag in selected,
                             onClick = {
-                                pendingSelection = if (tag in pendingSelection) pendingSelection - tag
-                                else pendingSelection + tag
+                                selected = if (tag in selected) selected - tag else selected + tag
                             }
                         )
                     }
                 }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = { expanded = false }) { Text("取消") }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = { expended = false }) {
+                        Text("取消")
+                    }
+                    Spacer(Modifier.size(8.dp))
                     TextButton(onClick = {
-                        onSave(pendingSelection)
-                        expanded = false
-                    }) { Text("确定") }
+                        onSave(selected)
+                        expended = false
+                    }) {
+                        Text("确定")
+                    }
                 }
             }
         }
@@ -209,16 +115,162 @@ private fun TagSelector(tags: List<String>, selected: Set<String>, onSave: (Set<
 
 @Composable
 private fun TagItem(tag: String, selected: Boolean, onClick: () -> Unit) {
-    Surface(onClick = onClick, shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.primaryContainer) {
-        Row(Modifier.padding(horizontal = 8.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.primaryContainer
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Icon(
                 imageVector = if (selected) Icons.Default.CheckCircle else Icons.Default.Circle,
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
-            Spacer(Modifier.size(4.dp))
             Text(tag, style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTaskDialog(initTask: Task, onDismiss: () -> Unit, onConfirm: (Task) -> Unit) {
+    var title by remember { mutableStateOf(initTask.title) }
+    var content by remember { mutableStateOf(initTask.content) }
+    var deadline by remember { mutableStateOf(initTask.deadline) }
+    var priority by remember { mutableStateOf(initTask.priority) }
+    var category by remember { mutableStateOf(initTask.category) }
+    var tag by remember { mutableStateOf(initTask.tag) }
+    var showDatepicker by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+    val sdf = SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+    var isCreate = initTask.id == 0L
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(if (isCreate) "新建任务" else "编辑任务")
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("标题") },
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    label = { Text("备注") },
+                    minLines = 2
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Priority.entries.forEach { p ->
+                        FilterChip(
+                            selected = priority == p,
+                            onClick = { priority = p },
+                            label = { Text(p.label) }
+                        )
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    TextButton(onClick = { showDatepicker = true }) {
+                        Icon(
+                            Icons.Default.DateRange,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("设置截止日期")
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "当前日期：${sdf.format(Date(deadline))}",
+                    )
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ExposedDropdownMenuBox(
+                        modifier = Modifier.fillMaxWidth(),
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it }
+                    ) {
+                        OutlinedTextField(
+                            value = category,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("分类") },
+                            // 自动旋转的下拉箭头
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            // 将这个Outline标记为Exposed的锚点
+                            modifier = Modifier.menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            Category.entries.forEach { it ->
+                                DropdownMenuItem(
+                                    text = { Text(it.label) },
+                                    onClick = {
+                                        category = it.label
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                TagSelector(Tag.entries.map { it.label }) { strings ->
+                    tag = strings.toList()
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (title.isNotBlank()) {
+                        onConfirm(
+                            initTask.copy(
+                                title = title,
+                                content = content,
+                                deadline = deadline,
+                                priority = priority,
+                                category = category,
+                                tag = tag
+                            )
+                        )
+                    }
+                }
+            ) {
+                Text(if (isCreate) "保存" else "确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        }
+    )
+    if (showDatepicker) {
+        val state = rememberDatePickerState(initialSelectedDateMillis = deadline)
+        DatePickerDialog(
+            onDismissRequest = { showDatepicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        state.selectedDateMillis?.let { deadline = it }
+                        showDatepicker = false
+                    }
+                ) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatepicker = false }) { Text("取消") }
+            }
+        ) { DatePicker(state = state) }
     }
 }

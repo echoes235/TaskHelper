@@ -5,8 +5,8 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "tasks",
-    indices = [Index("deadline"), Index("priority"), Index("createTime")]
+    tableName = "Tasks",
+    indices = [Index("deadline"), Index("priority"), Index("createTime"), Index("category")]
 )
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)

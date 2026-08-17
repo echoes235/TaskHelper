@@ -1,8 +1,7 @@
-package com.example.taskhelper.ui.category
+package com.example.taskhelper.ui.search
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,27 +16,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.taskhelper.ui.search.SearchViewModel
+import com.example.taskhelper.ui.task.ItemTask
+import com.example.taskhelper.ui.task.TaskListViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryScreen(viewmodel: SearchViewModel, onClick: (String) -> Unit) {
-    val categories by viewmodel.categories.collectAsStateWithLifecycle()
+fun TasksByCategory(
+    viewmodel: SearchViewModel,
+    taskViewModel: TaskListViewModel,
+    category: String
+) {
+    val tasks by viewmodel.getTasksByCategory(category)
+        .collectAsStateWithLifecycle(initialValue = emptyList())
     Scaffold(
-        topBar = { TopAppBar(title = { Text("类别") }) }
+        topBar = { TopAppBar(title = { Text(category) }) }
     ) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxWidth().padding(padding),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(categories, key = { it }) { category ->
+            items(tasks, key = { it.id }) { value ->
                 Surface(
-                    modifier = Modifier
-                        .padding(horizontal = 8.dp)
-                        .clickable { onClick(category) },
+                    modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(category, modifier = Modifier.padding(16.dp))
+                    ItemTask(
+                        value,
+                        onToggle = { taskViewModel.toggleComplete(value) },
+                        onClick = {}
+                    )
                 }
             }
         }

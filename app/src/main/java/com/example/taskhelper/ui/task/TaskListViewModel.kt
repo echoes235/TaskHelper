@@ -55,11 +55,13 @@ class TaskListViewModel : ViewModel() {
         }
     }
 
-    fun setSortBy(sortBy: SortBy) {
-        _sortBy.value = sortBy
+    fun setSortBy(sort: SortBy) {
+        _sortBy.value = sort
     }
 
     fun toggleComplete(task: Task) {
-        upsert(task.copy(isCompleted = !task.isCompleted))
+        viewModelScope.launch {
+            repository.upsert(task.copy(isCompleted = !task.isCompleted))
+        }
     }
 }

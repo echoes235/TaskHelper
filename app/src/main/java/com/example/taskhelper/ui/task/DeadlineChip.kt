@@ -12,24 +12,29 @@ import androidx.compose.ui.unit.dp
 import java.util.Calendar
 
 @Composable
-fun DeadlineChip(deadline: Long) {
+fun DeadLineChip(deadline: Long) {
+    val now = System.currentTimeMillis()
     val today = Calendar.getInstance().apply {
+        timeInMillis = now
         set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
+        set(Calendar.HOUR, 0)
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
     }.timeInMillis
-    val days = ((deadline - today) / 86_400_000L).toInt()
-    val (label, color) = when {
-        days < 0 -> "已过期" to MaterialTheme.colorScheme.error
-        days == 0 -> "今天" to MaterialTheme.colorScheme.error
-        days == 1 -> "明天" to Color(0xFFFFA000)
-        days == 2 -> "后天" to Color(0xFFFFA000)
-        else -> "$days 天后" to MaterialTheme.colorScheme.onSurfaceVariant
+    val diffDay = ((deadline - today) / (24 * 60 * 60 * 1000)).toInt()
+    val (text, color) = when {
+        diffDay < 0 -> "已过期" to MaterialTheme.colorScheme.error
+        diffDay == 0 -> "今天" to MaterialTheme.colorScheme.error
+        diffDay == 1 -> "明天" to Color(0xFFFFA000)
+        diffDay == 2 -> "后天" to Color(0xFFFFA000)
+        else -> "$diffDay 天后" to MaterialTheme.colorScheme.surfaceVariant
     }
-    Surface(color = color.copy(alpha = .15f), shape = RoundedCornerShape(4.dp)) {
+    Surface(
+        color = color.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(4.dp)
+    ) {
         Text(
-            text = label,
+            text = text,
             color = color,
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

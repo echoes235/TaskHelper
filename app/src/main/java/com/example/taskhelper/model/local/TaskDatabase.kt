@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [TaskEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class TaskDatabase : RoomDatabase() {
@@ -24,8 +24,7 @@ abstract class TaskDatabase : RoomDatabase() {
                     "taskhelper.db"
                 )
                     .fallbackToDestructiveMigration(dropAllTables = true)
-//                    .addMigrations()
-                    .build()
+                    .build().also { INSTANCE = it }
             }
     }
 }

@@ -1,11 +1,16 @@
 package com.example.taskhelper.model
 
-/** Stores a list in Room without losing spaces or punctuation within individual tags. */
+import androidx.room.TypeConverter
+
 object TypeConverter {
-    private const val Separator = "\u0001"
+    @TypeConverter
+    fun fromList(list: List<String>): String {
+        // 用不可见分隔符
+        return list.joinToString(separator = "\u0001") { it }
+    }
 
-    fun fromList(list: List<String>): String = list.joinToString(Separator)
-
-    fun toList(value: String): List<String> =
-        if (value.isEmpty()) emptyList() else value.split(Separator)
+    fun toList(str: String): List<String> {
+        return if (str.isEmpty()) emptyList()
+        else str.split("\u0001")
+    }
 }

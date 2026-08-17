@@ -12,8 +12,14 @@ interface TaskDao {
     @Query("SELECT * FROM tasks")
     fun getAllTasks(): Flow<List<TaskEntity>>
 
-    @Query("SELECT DISTINCT category FROM tasks WHERE category != '' ORDER BY category")
+    @Query("SELECT DISTINCT category FROM Tasks")
     fun getAllCategory(): Flow<List<String>>
+
+    @Query("SELECT * FROM Tasks WHERE category = :category")
+    fun getTasksByCategory(category: String): Flow<List<TaskEntity>>
+
+    @Query("SELECT * FROM tasks WHERE title LIKE '%' || :keyword || '%' OR content LIKE '%' || :keyword || '%'")
+    fun searchTasks(keyword: String): Flow<List<TaskEntity>>
 
 //    @Query("SELECT * FROM tasks ORDER BY deadline ASC")
 //    fun getAllByDeadline(): Flow<List<TaskEntity>>
